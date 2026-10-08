@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import FarmerApp, { type FarmerScreen } from './components/FarmerWorkspace'
-import OfficerApp from './components/OfficerApp'
+import OfficerApp, { type OfficerScreen } from './components/OfficerWorkspace'
 import FeedbackPage from './components/FeedbackPage'
 import TeacherPage from './components/TeacherPage'
 import { AppProvider } from './lib/store'
@@ -101,7 +101,7 @@ function AppContent() {
   const screen = parts[2] as FarmerScreen
   if (parts[1] === 'teacher') return <TeacherPage />
   if (parts[1] === 'farmer') return <FarmerApp screen={['home', 'pump', 'voice', 'reports'].includes(screen) ? screen : 'home'} onScreen={s => go(`/farmer/${s}`)} onSwitchRole={() => go('/')} onFeedback={() => go('/feedback')} />
-  if (parts[1] === 'officer') return <OfficerApp onSwitchRole={() => go('/')} onFeedback={() => go('/feedback')} />
+  if (parts[1] === 'officer') return <OfficerApp screen={['overview', 'filter', 'diagnostic', 'millreport'].includes(parts[2]) ? parts[2] as OfficerScreen : 'overview'} plotId={parts[3] ?? 'P-101'} onScreen={(s, id) => go(`/officer/${s}${id ? `/${id}` : ''}`)} onSwitchRole={() => go('/')} onFeedback={() => go('/feedback')} />
   if (parts[1] === 'feedback') return <FeedbackPage onBack={() => { window.history.back(); setPath(window.location.pathname) }} />
   return <RoleSelector onSelect={v => go(`/${v}`)} onFeedback={() => go('/feedback')} />
 }
