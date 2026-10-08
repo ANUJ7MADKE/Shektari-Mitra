@@ -14,7 +14,7 @@ export interface FeedbackEntry {
 export interface AppState {
   version: 1; plots: Plot[]; activeField: string; language: 'en' | 'mr';
   gridAvailable: boolean; nightSlot: boolean; rainExpected: boolean;
-  visits: Visit[]; advice: Advice[]; chats: Record<string, Message[]>; feedback: FeedbackEntry[]
+  visits: Visit[]; advice: Advice[]; chats: Record<string, Message[]>
 }
 export const STORAGE_KEY = 'shetkari-mitra:v1'
 export const uid = () => crypto.randomUUID()
@@ -34,7 +34,7 @@ export function initialState(): AppState {
   ] as const
   return {
     version: 1, activeField: 'P-101', language: 'en', gridAvailable: true, nightSlot: true, rainExpected: true,
-    visits: [], advice: [], chats: {}, feedback: [],
+    visits: [], advice: [], chats: {},
     plots: seeds.map(([id, farmer, field, moisture, soil, irrigation, power]) => ({
       id, farmer, field, moisture, soil, irrigation, power, threshold: 80,
       pump: { on: false, autoShutoff: true, nightOnly: true, startedAt: null, elapsedMs: 0 },
@@ -104,5 +104,5 @@ export function isAppState(value: unknown): value is AppState {
   if (!Array.isArray(s.visits) || !s.visits.every(v => v && str(v.id) && Array.isArray(v.plotIds) && v.plotIds.length > 0 && v.plotIds.every(id => ids.has(id)) && /^\d{4}-\d{2}-\d{2}$/.test(v.date) && date(v.date) && str(v.notes) && ['scheduled', 'completed', 'cancelled'].includes(v.status))) return false
   if (!Array.isArray(s.advice) || !s.advice.every(a => a && str(a.id) && ids.has(a.plotId) && str(a.text) && date(a.at) && num(a.threshold))) return false
   if (!s.chats || typeof s.chats !== 'object' || Array.isArray(s.chats) || !Object.entries(s.chats).every(([key, msgs]) => ids.has(key) && Array.isArray(msgs) && msgs.every(m => m && str(m.id) && ['user', 'assistant'].includes(m.role) && str(m.text)))) return false
-  return Array.isArray(s.feedback) && s.feedback.every(f => f && num(f.id) && [f.participantName, f.observations, f.lowReasons].every(str) && date(f.submittedAt) && Array.isArray(f.ratings) && f.ratings.length === 5 && f.ratings.every(r => Number.isInteger(r) && r >= 1 && r <= 5))
+  return true
 }

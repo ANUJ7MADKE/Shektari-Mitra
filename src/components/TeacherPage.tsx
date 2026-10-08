@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useApp } from '../lib/store'
-import { type FeedbackEntry } from '../lib/model'
+import { fetchFeedback, type FeedbackEntry } from '../lib/turso'
 import { download, csvCell } from '../lib/export'
 
 const labels = ['Task Completion', 'Navigation', 'Clarity', 'Efficiency & Errors', 'Satisfaction']
@@ -11,8 +10,7 @@ const fmtDate = (s: string) =>
   new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 export default function TeacherPage() {
-  const { state, notify } = useApp()
-  const entries = state.feedback
+  const [entries, setEntries] = useState<FeedbackEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -24,10 +22,10 @@ export default function TeacherPage() {
     setLoading(true)
     setError('')
     try {
-      notify('Showing feedback saved in this browser.')
+      setEntries(await fetchFeedback())
     } catch (e) {
       console.error(e)
-      setError('Could not read locally saved feedback.')
+      setError('Could not load feedback. Please check the connection and refresh.')
     }
     setLoading(false)
   }
@@ -82,7 +80,7 @@ export default function TeacherPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-        <p className="text-sm text-[var(--muted-foreground)]">Responses saved in this browser only. Export CSV to share them.</p>
+        <p className="text-sm text-[var(--muted-foreground)]">Shared feedback responses from Turso. Export CSV to share them.</p>
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
         )}

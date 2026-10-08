@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useApp } from '../lib/store'
+import { submitFeedback } from '../lib/turso'
 
 interface FeedbackPageProps {
   onBack: () => void
@@ -82,7 +82,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function FeedbackPage({ onBack }: FeedbackPageProps) {
-  const { update } = useApp()
   const [participantName, setParticipantName] = useState('')
   const [ratings, setRatings] = useState<Record<CriterionKey, number>>({
     taskCompletion: 0,
@@ -137,17 +136,11 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
       : observations
 
     try {
-      const saved = update(s => ({ ...s, feedback: [{
-        id: Date.now(), participantName: participantName.trim(),
-        ratings: [ratings.taskCompletion, ratings.navigationInteraction, ratings.clarityConsistency, ratings.efficiencyError, ratings.userSatisfaction],
-        observations: observations.trim(), lowReasons: reasonSummary,
-        submittedAt: new Date().toISOString(),
-      }, ...s.feedback] }))
-      if (!saved) throw new Error('Local storage unavailable')
+      await submitFeedback({ participantName: participantName.trim(), ...ratings, writtenResponses: fullObservations })
       setStatus('success')
     } catch (err) {
       console.error(err)
-      setErrorMsg('Feedback could not be saved. Allow browser storage or free up space, then try again.')
+      setErrorMsg('Submission failed. Please check your connection and try again.')
       setStatus('error')
     }
   }
@@ -163,7 +156,7 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
           </div>
           <h2 className="font-display text-3xl text-[var(--foreground)] mb-3">Thank you, {participantName}.</h2>
           <p className="text-[var(--muted-foreground)] text-sm mb-6">
-            Your feedback has been saved in this browser. View and export it from Feedback Responses on the home page.
+            Your feedback has been recorded in our shared feedback database and will help improve Shetkari Mitra.
           </p>
           <button
             onClick={onBack}
@@ -205,7 +198,7 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
             <span className="w-1 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
             <p className="text-sm text-amber-950 leading-relaxed">
               <span className="font-bold">Note on the prototype: </span>
-              This interactive demo uses simulated field readings, weather and pump operation. Data and feedback are saved only in this browser. Use Feedback Responses to export responses for sharing.
+              This interactive demo uses simulated field readings, weather and pump operation. Field activity is saved in this browser. Feedback is submitted to our shared Turso database.
             </p>
           </div>
         </div>
