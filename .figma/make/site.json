@@ -1,0 +1,11 @@
+{
+  "title": "Shetkari Mitra",
+  "description": "This web application offers a streamlined user experience with a clean interface, enabling users to navigate easily through organized content across multiple screens.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
