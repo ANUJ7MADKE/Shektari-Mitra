@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchFeedback, type FeedbackEntry } from '../lib/turso'
+import { useApp } from '../lib/store'
+import { type FeedbackEntry } from '../lib/model'
+import { download, csvCell } from '../lib/export'
 
 const labels = ['Task Completion', 'Navigation', 'Clarity', 'Efficiency & Errors', 'Satisfaction']
 
@@ -8,12 +10,9 @@ const overall = (e: FeedbackEntry) => avg(e.ratings)
 const fmtDate = (s: string) =>
   new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
-function csvCell(v: string | number) {
-  return `"${String(v).replace(/"/g, '""')}"`
-}
-
 export default function TeacherPage() {
-  const [entries, setEntries] = useState<FeedbackEntry[]>([])
+  const { state, notify } = useApp()
+  const entries = state.feedback
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -25,10 +24,10 @@ export default function TeacherPage() {
     setLoading(true)
     setError('')
     try {
-      setEntries(await fetchFeedback())
+      notify('Showing feedback saved in this browser.')
     } catch (e) {
       console.error(e)
-      setError('Could not load feedback. Please check the connection and refresh.')
+      setError('Could not read locally saved feedback.')
     }
     setLoading(false)
   }
@@ -57,16 +56,13 @@ export default function TeacherPage() {
     const rows = shown.map(e =>
       [e.participantName, ...e.ratings, e.observations, e.lowReasons, e.submittedAt].map(csvCell).join(','),
     )
-    const blob = new Blob([[head.map(csvCell).join(','), ...rows].join('\n')], { type: 'text/csv' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'shetkari-mitra-feedback.csv'
-    a.click()
+    download('shetkari-mitra-feedback.csv', '\uFEFF' + [head.map(csvCell).join(','), ...rows].join('\r\n'), 'text/csv;charset=utf-8')
   }
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <div className="sticky top-0 z-10 bg-white border-b border-[var(--border)] flex items-center gap-4 px-6 py-3">
+      <div className="sticky top-0 z-10 bg-white border-b border-[var(--border)] flex flex-wrap items-center gap-4 px-6 py-3">
+        <a href="/" className="text-sm text-[var(--primary)] underline">Home</a>
         <h1 className="font-semibold text-base text-[var(--foreground)]">Feedback Responses — Shetkari Mitra</h1>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -86,6 +82,7 @@ export default function TeacherPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+        <p className="text-sm text-[var(--muted-foreground)]">Responses saved in this browser only. Export CSV to share them.</p>
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
         )}

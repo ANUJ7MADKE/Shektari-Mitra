@@ -3,6 +3,7 @@ import FarmerApp from './components/FarmerApp'
 import OfficerApp from './components/OfficerApp'
 import FeedbackPage from './components/FeedbackPage'
 import TeacherPage from './components/TeacherPage'
+import { AppProvider } from './lib/store'
 
 type View = 'home' | 'farmer' | 'officer' | 'feedback'
 
@@ -93,7 +94,7 @@ function RoleSelector({ onSelect, onFeedback }: { onSelect: (r: 'farmer' | 'offi
   )
 }
 
-export default function App() {
+function AppContent() {
   const [view, setView] = useState<View>('home')
 
   if (window.location.pathname.replace(/\/+$/, '') === '/teacher') return <TeacherPage />
@@ -103,3 +104,5 @@ export default function App() {
   if (view === 'feedback') return <FeedbackPage onBack={() => setView('home')} />
   return <RoleSelector onSelect={v => setView(v)} onFeedback={() => setView('feedback')} />
 }
+
+export default function App() { return <AppProvider><AppContent /></AppProvider> }

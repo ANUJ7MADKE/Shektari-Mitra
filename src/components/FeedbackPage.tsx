@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { submitFeedback } from '../lib/turso'
+import { useApp } from '../lib/store'
 
 interface FeedbackPageProps {
   onBack: () => void
@@ -82,6 +82,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function FeedbackPage({ onBack }: FeedbackPageProps) {
+  const { update } = useApp()
   const [participantName, setParticipantName] = useState('')
   const [ratings, setRatings] = useState<Record<CriterionKey, number>>({
     taskCompletion: 0,
@@ -136,15 +137,17 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
       : observations
 
     try {
-      await submitFeedback({
-        participantName: participantName.trim(),
-        ...ratings,
-        writtenResponses: fullObservations,
-      })
+      const saved = update(s => ({ ...s, feedback: [{
+        id: Date.now(), participantName: participantName.trim(),
+        ratings: [ratings.taskCompletion, ratings.navigationInteraction, ratings.clarityConsistency, ratings.efficiencyError, ratings.userSatisfaction],
+        observations: observations.trim(), lowReasons: reasonSummary,
+        submittedAt: new Date().toISOString(),
+      }, ...s.feedback] }))
+      if (!saved) throw new Error('Local storage unavailable')
       setStatus('success')
     } catch (err) {
       console.error(err)
-      setErrorMsg('Submission failed. Please check your connection and try again.')
+      setErrorMsg('Feedback could not be saved. Allow browser storage or free up space, then try again.')
       setStatus('error')
     }
   }
@@ -160,7 +163,7 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
           </div>
           <h2 className="font-display text-3xl text-[var(--foreground)] mb-3">Thank you, {participantName}.</h2>
           <p className="text-[var(--muted-foreground)] text-sm mb-6">
-            Your feedback has been recorded and will help improve Shetkari Mitra's usability for farmers and officers across Sangli District.
+            Your feedback has been saved in this browser. View and export it from Feedback Responses on the home page.
           </p>
           <button
             onClick={onBack}
@@ -202,7 +205,7 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
             <span className="w-1 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
             <p className="text-sm text-amber-950 leading-relaxed">
               <span className="font-bold">Note on the prototype: </span>
-              This is a proof of concept, not a fully functioning service. Some parts are shown only to illustrate the idea, so certain buttons, screens and data may not be interactive or respond the way you would expect.
+              This interactive demo uses simulated field readings, weather and pump operation. Data and feedback are saved only in this browser. Use Feedback Responses to export responses for sharing.
             </p>
           </div>
         </div>
@@ -237,7 +240,7 @@ export default function FeedbackPage({ onBack }: FeedbackPageProps) {
                     onChange={v => setRatings(prev => ({ ...prev, [c.key]: v }))}
                   />
                   {/* Low-rating reason prompt */}
-                  {ratings[c.key] > 0 && ratings[c.key] < 4 && (
+                  {ratings[c.key] > 0 && ratings[c.key] < 3 && (
                     <div className="mt-3 pl-1">
                       <label className="block text-xs font-semibold text-red-600 mb-1">
                         What made this difficult? <span className="text-red-500">*</span>

@@ -1,20 +1,23 @@
 {
-  "name": "figma-make-app",
+  "name": "shetkari-mitra",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
     "preview": "vite preview",
     "format": "oxfmt"
   },
   "dependencies": {
-    "@libsql/client": "^0.18.0",
+    "jspdf": "^3.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
