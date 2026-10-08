@@ -1,66 +1,974 @@
-import { useState, type ReactNode } from 'react'
-import { useApp } from '../lib/store'
-import { advisory, average, grade, health, months, periodReadings, pumpBlock, stopPump, today, uid, type Plot } from '../lib/model'
-import { csvCell, download, exportReport } from '../lib/export'
+﻿import { useState, type ReactNode } from "react"
+import { useApp } from "../lib/store"
+import {
+  advisory,
+  average,
+  grade,
+  health,
+  months,
+  periodReadings,
+  pumpBlock,
+  stopPump,
+  today,
+  uid,
+  type Plot,
+} from "../lib/model"
+import { csvCell, download, exportReport } from "../lib/export"
 
-export type OfficerScreen = 'overview' | 'filter' | 'diagnostic' | 'millreport'
+export type OfficerScreen = "overview" | "filter" | "diagnostic" | "millreport"
 type Nav = (screen: OfficerScreen, plotId?: string) => void
-function Card({ children, className = '' }: { children: ReactNode; className?: string }) { return <div className={`bg-white border border-[var(--border)] rounded-[var(--radius)] p-4 ${className}`}>{children}</div> }
-function Badge({ plot }: { plot: Plot }) { const h = health(plot); return <span className={`text-xs font-semibold px-2 py-1 rounded-full ${h === 'Optimal' ? 'bg-[var(--secondary)] text-[var(--primary)]' : 'bg-amber-100 text-amber-900'}`}>{h}</span> }
+function Card({
+  children,
+  className = "",
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={`bg-white border border-[var(--border)] rounded-[var(--radius)] p-4 ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+function Badge({ plot }: { plot: Plot }) {
+  const h = health(plot)
+  return (
+    <span
+      className={`text-xs font-semibold px-2 py-1 rounded-full ${
+        h === "Optimal"
+          ? "bg-[var(--secondary)] text-[var(--primary)]"
+          : "bg-amber-100 text-amber-900"
+      }`}
+    >
+      {h}
+    </span>
+  )
+}
 function Overview({ onNav }: { onNav: Nav }) {
   const { state } = useApp()
-  const counts = [state.plots.length, state.plots.filter(p => health(p) === 'Waterlogged').length, state.plots.filter(p => health(p) === 'Optimal').length, state.plots.filter(p => health(p) === 'Dry').length]
-  return <div className="space-y-5"><div><h1 className="font-display text-2xl">Cluster Overview &amp; Alerts</h1><p className="text-sm text-[var(--muted-foreground)] mt-1">Village A — Sangli District — {months()[0].label}</p></div><div className="grid grid-cols-2 xl:grid-cols-4 gap-3">{['Plots Monitored', 'Over-Irrigated', 'Optimal Plots', 'Dry Plots'].map((label, i) => <Card key={label}><p className="text-xs text-[var(--muted-foreground)] mb-1">{label}</p><p className={`font-display text-3xl ${i === 1 || i === 3 ? 'text-[var(--accent)]' : 'text-[var(--primary)]'}`}>{counts[i]}</p><p className="text-xs text-[var(--muted-foreground)] mt-1">{i === 1 || i === 3 ? 'Action needed' : 'Sample cluster'}</p></Card>)}</div><div className="flex justify-between"><h2 className="text-sm font-semibold">Plot Summary</h2><button onClick={() => onNav('filter')} className="text-xs underline text-[var(--primary)]">Filter Plots</button></div><div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{state.plots.map(p => <Card key={p.id}><div className="flex justify-between gap-2 mb-3"><div><p className="font-semibold text-sm">{p.farmer}</p><p className="text-xs text-[var(--muted-foreground)]">{p.id} · {p.field}</p></div><span className="text-xs font-bold text-[var(--primary)] shrink-0">Grade {grade(p.moisture, p.threshold)}</span></div><div className="flex justify-between text-xs mb-1"><span>Moisture</span><strong>{p.moisture}%</strong></div><div className="h-1.5 bg-[var(--muted)] rounded-full overflow-hidden mb-3"><div className={health(p) === 'Optimal' ? 'h-full bg-[var(--primary)]' : 'h-full bg-[var(--accent)]'} style={{ width: `${p.moisture}%` }} /></div><Badge plot={p} /><button onClick={() => onNav('diagnostic', p.id)} className="block mt-4 text-xs underline text-[var(--primary)]" aria-label={`View details for ${p.id}`}>View Details</button></Card>)}</div></div>
+  const counts = [
+    state.plots.length,
+    state.plots.filter((p) => health(p) === "Waterlogged").length,
+    state.plots.filter((p) => health(p) === "Optimal").length,
+    state.plots.filter((p) => health(p) === "Dry").length,
+  ]
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl">Cluster Overview &amp; Alerts</h1>
+        <p className="text-sm text-[var(--muted-foreground)] mt-1">
+          Village A — Sangli District — {months()[0].label}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          "Plots Monitored",
+          "Over-Irrigated",
+          "Optimal Plots",
+          "Dry Plots",
+        ].map((label, i) => (
+          <Card key={label}>
+            <p className="text-xs text-[var(--muted-foreground)] mb-1">
+              {label}
+            </p>
+            <p
+              className={`font-display text-3xl ${
+                i === 1 || i === 3
+                  ? "text-[var(--accent)]"
+                  : "text-[var(--primary)]"
+              }`}
+            >
+              {counts[i]}
+            </p>
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+              {i === 1 || i === 3 ? "Action needed" : "Sample cluster"}
+            </p>
+          </Card>
+        ))}
+      </div>
+      <div className="flex justify-between">
+        <h2 className="text-sm font-semibold">Plot Summary</h2>
+        <button
+          onClick={() => onNav("filter")}
+          className="text-xs underline text-[var(--primary)]"
+        >
+          Filter Plots
+        </button>
+      </div>
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {state.plots.map((p) => (
+          <Card key={p.id}>
+            <div className="flex justify-between gap-2 mb-3">
+              <div>
+                <p className="font-semibold text-sm">{p.farmer}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {p.id} · {p.field}
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[var(--primary)] shrink-0">
+                Grade {grade(p.moisture, p.threshold)}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs mb-1">
+              <span>Moisture</span>
+              <strong>{p.moisture}%</strong>
+            </div>
+            <div className="h-1.5 bg-[var(--muted)] rounded-full overflow-hidden mb-3">
+              <div
+                className={
+                  health(p) === "Optimal"
+                    ? "h-full bg-[var(--primary)]"
+                    : "h-full bg-[var(--accent)]"
+                }
+                style={{ width: `${p.moisture}%` }}
+              />
+            </div>
+            <Badge plot={p} />
+            <button
+              onClick={() => onNav("diagnostic", p.id)}
+              className="block mt-4 text-xs underline text-[var(--primary)]"
+              aria-label={`View details for ${p.id}`}
+            >
+              View Details
+            </button>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
 }
 function Filters({ onNav }: { onNav: Nav }) {
   const { state, update, notify } = useApp()
-  const [moisture, setMoisture] = useState('waterlogged'), [soil, setSoil] = useState('all'), [method, setMethod] = useState('all'), [power, setPower] = useState('all'), [selected, setSelected] = useState<string[]>([]), [date, setDate] = useState(today()), [notes, setNotes] = useState(''), [error, setError] = useState('')
-  const visible = state.plots.filter(p => (moisture === 'all' || health(p).toLowerCase() === moisture) && (soil === 'all' || p.soil === soil) && (method === 'all' || p.irrigation === method) && (power === 'all' || p.power === power))
-  const visibleSelected = selected.filter(id => visible.some(p => p.id === id))
-  function toggle(id: string) { setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]) }
+  const [moisture, setMoisture] = useState("waterlogged"),
+    [soil, setSoil] = useState("all"),
+    [method, setMethod] = useState("all"),
+    [power, setPower] = useState("all"),
+    [selected, setSelected] = useState<string[]>([]),
+    [date, setDate] = useState(today()),
+    [notes, setNotes] = useState(""),
+    [error, setError] = useState("")
+  const visible = state.plots.filter(
+    (p) =>
+      (moisture === "all" || health(p).toLowerCase() === moisture) &&
+      (soil === "all" || p.soil === soil) &&
+      (method === "all" || p.irrigation === method) &&
+      (power === "all" || p.power === power),
+  )
+  const visibleSelected = selected.filter((id) =>
+    visible.some((p) => p.id === id),
+  )
+  function toggle(id: string) {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }
   function schedule(e: React.FormEvent) {
-    e.preventDefault(); setError('')
-    if (!visibleSelected.length) { setError('Select at least one plot.'); return }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today()) { setError('Choose today or a future date.'); return }
-    if (state.visits.some(v => v.status === 'scheduled' && v.date === date && v.plotIds.some(id => visibleSelected.includes(id)))) { setError('A visit for one of these plots is already scheduled on that date.'); return }
-    if (update(s => ({ ...s, visits: [...s.visits, { id: uid(), plotIds: visibleSelected, date, notes: notes.trim(), status: 'scheduled' }] }))) { notify(`Field visit scheduled for ${visibleSelected.length} plot(s) on ${date}.`); setSelected([]); setNotes('') }
+    e.preventDefault()
+    setError("")
+    if (!visibleSelected.length) {
+      setError("Select at least one plot.")
+      return
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today()) {
+      setError("Choose today or a future date.")
+      return
+    }
+    if (
+      state.visits.some(
+        (v) =>
+          v.status === "scheduled" &&
+          v.date === date &&
+          v.plotIds.some((id) => visibleSelected.includes(id)),
+      )
+    ) {
+      setError(
+        "A visit for one of these plots is already scheduled on that date.",
+      )
+      return
+    }
+    if (
+      update((s) => ({
+        ...s,
+        visits: [
+          ...s.visits,
+          {
+            id: uid(),
+            plotIds: visibleSelected,
+            date,
+            notes: notes.trim(),
+            status: "scheduled",
+          },
+        ],
+      }))
+    ) {
+      notify(
+        `Field visit scheduled for ${visibleSelected.length} plot(s) on ${date}.`,
+      )
+      setSelected([])
+      setNotes("")
+    }
   }
   const filterConfigs = [
-    { label: 'Moisture Level', value: moisture, change: setMoisture, options: [['all', 'All levels'], ['waterlogged', 'Above plot limit'], ['optimal', 'Optimal'], ['dry', 'Below 60%']] },
-    { label: 'Soil Type', value: soil, change: setSoil, options: [['all', 'All soil types'], ['Black Soil', 'Black Soil'], ['Red Soil', 'Red Soil']] },
-    { label: 'Irrigation Method', value: method, change: setMethod, options: [['all', 'All methods'], ['Drip', 'Drip'], ['Flood', 'Flood'], ['Sprinkler', 'Sprinkler']] },
-    { label: 'Power Group', value: power, change: setPower, options: [['all', 'All groups'], ['Night Slot', 'Night Slot'], ['Day Slot', 'Day Slot']] },
+    {
+      label: "Moisture Level",
+      value: moisture,
+      change: setMoisture,
+      options: [
+        ["all", "All levels"],
+        ["waterlogged", "Above plot limit"],
+        ["optimal", "Optimal"],
+        ["dry", "Below 60%"],
+      ],
+    },
+    {
+      label: "Soil Type",
+      value: soil,
+      change: setSoil,
+      options: [
+        ["all", "All soil types"],
+        ["Black Soil", "Black Soil"],
+        ["Red Soil", "Red Soil"],
+      ],
+    },
+    {
+      label: "Irrigation Method",
+      value: method,
+      change: setMethod,
+      options: [
+        ["all", "All methods"],
+        ["Drip", "Drip"],
+        ["Flood", "Flood"],
+        ["Sprinkler", "Sprinkler"],
+      ],
+    },
+    {
+      label: "Power Group",
+      value: power,
+      change: setPower,
+      options: [
+        ["all", "All groups"],
+        ["Night Slot", "Night Slot"],
+        ["Day Slot", "Day Slot"],
+      ],
+    },
   ]
-  return <div className="space-y-5"><div><h1 className="font-display text-2xl">Plot Filter &amp; Health Tracking</h1><p className="text-sm text-[var(--muted-foreground)] mt-1">Identify plots and schedule field visits</p></div><Card><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">{filterConfigs.map(f => <label className="text-xs text-[var(--muted-foreground)]" key={f.label}>{f.label}<select className="form-input w-full mt-1 text-[var(--foreground)]" value={f.value} onChange={e => f.change(e.target.value)}>{f.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></label>)}</div><button className="text-xs text-[var(--primary)] underline mt-3" onClick={() => { setMoisture('all'); setSoil('all'); setMethod('all'); setPower('all'); setSelected([]) }}>Clear filters</button></Card><div className="grid lg:grid-cols-2 gap-4"><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-3">Matching Plots ({visible.length})</h2>{!visible.length && <p className="text-sm text-[var(--muted-foreground)]">No plots match. Try clearing your filters.</p>}{visible.map(p => <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[var(--muted)]"><input aria-label={`Select ${p.id}`} type="checkbox" checked={visibleSelected.includes(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--primary)] w-4 h-4" /><button className="flex-1 text-left" onClick={() => onNav('diagnostic', p.id)}><p className="text-sm font-medium">{p.farmer}</p><p className="text-xs text-[var(--muted-foreground)]">{p.id} — {p.moisture}% moisture</p></button><Badge plot={p} /></div>)}</Card><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-3">Parcel Map — Village A</h2><p className="text-xs text-[var(--muted-foreground)] mb-3">Schematic sample parcels. Click a parcel to select it for a visit.</p><div className="grid grid-cols-3 gap-3 p-4 bg-[var(--muted)] rounded-lg min-h-52">{state.plots.map(p => { const shown = visible.some(v => v.id === p.id); return <button key={p.id} disabled={!shown} aria-label={`Select parcel ${p.id}`} aria-pressed={visibleSelected.includes(p.id)} onClick={() => toggle(p.id)} className={`rounded border-2 text-xs flex flex-col justify-center items-center gap-1 ${visibleSelected.includes(p.id) ? 'ring-2 ring-[var(--primary)] ring-offset-2' : ''} ${health(p) === 'Optimal' ? 'bg-green-100 border-green-700 text-green-900' : 'bg-amber-100 border-amber-600 text-amber-950'}`}><strong>{p.id}</strong><span>{p.moisture}%</span><span>{health(p)}</span></button> })}</div></Card></div>
-    <Card><form onSubmit={schedule} className="space-y-3"><h2 className="text-sm font-semibold">Schedule Field Visits ({visibleSelected.length} selected)</h2><div className="grid sm:grid-cols-2 gap-3"><label className="text-xs">Visit date<input required type="date" min={today()} value={date} onChange={e => setDate(e.target.value)} className="form-input w-full mt-1" /></label><label className="text-xs">Visit notes<input value={notes} maxLength={500} placeholder="Purpose of visit (optional)" onChange={e => setNotes(e.target.value)} className="form-input w-full mt-1" /></label></div>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}<button className="primary-button" disabled={!visibleSelected.length}>Schedule Field Visits</button></form></Card>
-    <Card><h2 className="text-sm font-semibold mb-3">Saved Field Visits</h2>{!state.visits.length && <p className="text-sm text-[var(--muted-foreground)]">No visits scheduled yet.</p>}{state.visits.slice().sort((a, b) => a.date.localeCompare(b.date)).map(v => <div key={v.id} className="border-t border-[var(--border)] py-3 flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-medium">{v.date} · {v.plotIds.join(', ')} · {v.status}</p><p className="text-xs text-[var(--muted-foreground)]">{v.notes || 'Field health review'}</p></div>{v.status === 'scheduled' && <div className="flex gap-3"><button className="text-xs text-[var(--primary)] underline" onClick={() => { if (update(s => ({ ...s, visits: s.visits.map(x => x.id === v.id ? { ...x, status: 'completed' } : x) }))) notify('Visit marked complete.') }}>Mark complete</button><button className="text-xs text-red-700 underline" onClick={() => { if (update(s => ({ ...s, visits: s.visits.map(x => x.id === v.id ? { ...x, status: 'cancelled' } : x) }))) notify('Visit cancelled.') }}>Cancel visit</button></div>}</div>)}</Card>
-  </div>
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl">
+          Plot Filter &amp; Health Tracking
+        </h1>
+        <p className="text-sm text-[var(--muted-foreground)] mt-1">
+          Identify plots and schedule field visits
+        </p>
+      </div>
+      <Card>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {filterConfigs.map((f) => (
+            <label
+              className="text-xs text-[var(--muted-foreground)]"
+              key={f.label}
+            >
+              {f.label}
+              <select
+                className="form-input w-full mt-1 text-[var(--foreground)]"
+                value={f.value}
+                onChange={(e) => f.change(e.target.value)}
+              >
+                {f.options.map(([v, label]) => (
+                  <option key={v} value={v}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <button
+          className="text-xs text-[var(--primary)] underline mt-3"
+          onClick={() => {
+            setMoisture("all")
+            setSoil("all")
+            setMethod("all")
+            setPower("all")
+            setSelected([])
+          }}
+        >
+          Clear filters
+        </button>
+      </Card>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card>
+          <h2 className="text-xs font-semibold uppercase tracking-wide mb-3">
+            Matching Plots ({visible.length})
+          </h2>
+          {!visible.length && (
+            <p className="text-sm text-[var(--muted-foreground)]">
+              No plots match. Try clearing your filters.
+            </p>
+          )}
+          {visible.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[var(--muted)]"
+            >
+              <input
+                aria-label={`Select ${p.id}`}
+                type="checkbox"
+                checked={visibleSelected.includes(p.id)}
+                onChange={() => toggle(p.id)}
+                className="accent-[var(--primary)] w-4 h-4"
+              />
+              <button
+                className="flex-1 text-left"
+                onClick={() => onNav("diagnostic", p.id)}
+              >
+                <p className="text-sm font-medium">{p.farmer}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {p.id} — {p.moisture}% moisture
+                </p>
+              </button>
+              <Badge plot={p} />
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <h2 className="text-xs font-semibold uppercase tracking-wide mb-3">
+            Parcel Map — Village A
+          </h2>
+          <p className="text-xs text-[var(--muted-foreground)] mb-3">
+            Schematic sample parcels. Click a parcel to select it for a visit.
+          </p>
+          <div className="grid grid-cols-3 gap-3 p-4 bg-[var(--muted)] rounded-lg min-h-52">
+            {state.plots.map((p) => {
+              const shown = visible.some((v) => v.id === p.id)
+              return (
+                <button
+                  key={p.id}
+                  disabled={!shown}
+                  aria-label={`Select parcel ${p.id}`}
+                  aria-pressed={visibleSelected.includes(p.id)}
+                  onClick={() => toggle(p.id)}
+                  className={`rounded border-2 text-xs flex flex-col justify-center items-center gap-1 ${
+                    visibleSelected.includes(p.id)
+                      ? "ring-2 ring-[var(--primary)] ring-offset-2"
+                      : ""
+                  } ${
+                    health(p) === "Optimal"
+                      ? "bg-green-100 border-green-700 text-green-900"
+                      : "bg-amber-100 border-amber-600 text-amber-950"
+                  }`}
+                >
+                  <strong>{p.id}</strong>
+                  <span>{p.moisture}%</span>
+                  <span>{health(p)}</span>
+                </button>
+              )
+            })}
+          </div>
+        </Card>
+      </div>
+      <Card>
+        <form onSubmit={schedule} className="space-y-3">
+          <h2 className="text-sm font-semibold">
+            Schedule Field Visits ({visibleSelected.length} selected)
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="text-xs">
+              Visit date
+              <input
+                required
+                type="date"
+                min={today()}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="form-input w-full mt-1"
+              />
+            </label>
+            <label className="text-xs">
+              Visit notes
+              <input
+                value={notes}
+                maxLength={500}
+                placeholder="Purpose of visit (optional)"
+                onChange={(e) => setNotes(e.target.value)}
+                className="form-input w-full mt-1"
+              />
+            </label>
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-red-700">
+              {error}
+            </p>
+          )}
+          <button className="primary-button" disabled={!visibleSelected.length}>
+            Schedule Field Visits
+          </button>
+        </form>
+      </Card>
+      <Card>
+        <h2 className="text-sm font-semibold mb-3">Saved Field Visits</h2>
+        {!state.visits.length && (
+          <p className="text-sm text-[var(--muted-foreground)]">
+            No visits scheduled yet.
+          </p>
+        )}
+        {state.visits
+          .slice()
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .map((v) => (
+            <div
+              key={v.id}
+              className="border-t border-[var(--border)] py-3 flex flex-wrap items-center justify-between gap-3"
+            >
+              <div>
+                <p className="text-sm font-medium">
+                  {v.date} · {v.plotIds.join(", ")} · {v.status}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {v.notes || "Field health review"}
+                </p>
+              </div>
+              {v.status === "scheduled" && (
+                <div className="flex gap-3">
+                  <button
+                    className="text-xs text-[var(--primary)] underline"
+                    onClick={() => {
+                      if (
+                        update((s) => ({
+                          ...s,
+                          visits: s.visits.map((x) =>
+                            x.id === v.id ? { ...x, status: "completed" } : x,
+                          ),
+                        }))
+                      )
+                        notify("Visit marked complete.")
+                    }}
+                  >
+                    Mark complete
+                  </button>
+                  <button
+                    className="text-xs text-red-700 underline"
+                    onClick={() => {
+                      if (
+                        update((s) => ({
+                          ...s,
+                          visits: s.visits.map((x) =>
+                            x.id === v.id ? { ...x, status: "cancelled" } : x,
+                          ),
+                        }))
+                      )
+                        notify("Visit cancelled.")
+                    }}
+                  >
+                    Cancel visit
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+      </Card>
+    </div>
+  )
 }
-function LineChart({ values, min, max, threshold, color = 'var(--primary)' }: { values: number[]; min: number; max: number; threshold?: number; color?: string }) {
-  const y = (v: number) => 125 - ((v - min) / (max - min)) * 105, x = (i: number) => 25 + i * 270 / Math.max(1, values.length - 1)
-  return <svg role="img" aria-label={`Sample trend from ${values[0]?.toFixed(1)} to ${values[values.length - 1]?.toFixed(1)}`} width="100%" height="160" viewBox="0 0 320 160"><line x1="25" y1="125" x2="295" y2="125" stroke="var(--border)"/><text x="2" y="23" fontSize="9" fill="var(--muted-foreground)">{max}</text><text x="2" y="127" fontSize="9" fill="var(--muted-foreground)">{min}</text>{threshold !== undefined && <><line x1="25" x2="295" y1={y(threshold)} y2={y(threshold)} stroke="var(--accent)" strokeDasharray="4 3"/><text x="27" y={y(threshold) - 4} fontSize="9" fill="var(--accent)">{threshold}% limit</text></>}<polyline points={values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke={color} strokeWidth="2"/>{values.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="2.5" fill={color}/>)}<text x="25" y="148" fontSize="9" fill="var(--muted-foreground)">Earlier</text><text x="295" y="148" textAnchor="end" fontSize="9" fill="var(--muted-foreground)">Latest reading</text></svg>
+function LineChart({
+  values,
+  min,
+  max,
+  threshold,
+  color = "var(--primary)",
+}: {
+  values: number[]
+  min: number
+  max: number
+  threshold?: number
+  color?: string
+}) {
+  const y = (v: number) => 125 - ((v - min) / (max - min)) * 105,
+    x = (i: number) => 25 + (i * 270) / Math.max(1, values.length - 1)
+  return (
+    <svg
+      role="img"
+      aria-label={`Sample trend from ${values[0]?.toFixed(1)} to ${values[values.length - 1]?.toFixed(1)}`}
+      width="100%"
+      height="160"
+      viewBox="0 0 320 160"
+    >
+      <line x1="25" y1="125" x2="295" y2="125" stroke="var(--border)" />
+      <text x="2" y="23" fontSize="9" fill="var(--muted-foreground)">
+        {max}
+      </text>
+      <text x="2" y="127" fontSize="9" fill="var(--muted-foreground)">
+        {min}
+      </text>
+      {threshold !== undefined && (
+        <>
+          <line
+            x1="25"
+            x2="295"
+            y1={y(threshold)}
+            y2={y(threshold)}
+            stroke="var(--accent)"
+            strokeDasharray="4 3"
+          />
+          <text x="27" y={y(threshold) - 4} fontSize="9" fill="var(--accent)">
+            {threshold}% limit
+          </text>
+        </>
+      )}
+      <polyline
+        points={values.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+      />
+      {values.map((v, i) => (
+        <circle key={i} cx={x(i)} cy={y(v)} r="2.5" fill={color} />
+      ))}
+      <text x="25" y="148" fontSize="9" fill="var(--muted-foreground)">
+        Earlier
+      </text>
+      <text
+        x="295"
+        y="148"
+        textAnchor="end"
+        fontSize="9"
+        fill="var(--muted-foreground)"
+      >
+        Latest reading
+      </text>
+    </svg>
+  )
 }
 function Diagnostic({ plot, onNav }: { plot: Plot; onNav: Nav }) {
   const { state, update, notify } = useApp()
-  const [note, setNote] = useState(''), [threshold, setThreshold] = useState(plot.threshold)
-  const history = plot.history.slice(-14).map(r => r.moisture), impact = history.map(m => -Math.min(2, Math.max(0, m - plot.threshold) * .15))
+  const [note, setNote] = useState(""),
+    [threshold, setThreshold] = useState(plot.threshold)
+  const history = plot.history.slice(-14).map((r) => r.moisture),
+    impact = history.map(
+      (m) => -Math.min(2, Math.max(0, m - plot.threshold) * 0.15),
+    )
   function save(e: React.FormEvent) {
     e.preventDefault()
     if (!note.trim()) return
-    if (update(s => ({ ...s, advice: [...s.advice, { id: uid(), plotId: plot.id, text: note.trim(), threshold, at: new Date().toISOString() }], plots: s.plots.map(p => { if (p.id !== plot.id) return p; const next = { ...p, threshold }; return next.pump.on && pumpBlock(next, s) ? stopPump(next) : next }) }))) { notify('Advice and shutoff threshold saved. The farmer can see your note.'); setNote('') }
+    if (
+      update((s) => ({
+        ...s,
+        advice: [
+          ...s.advice,
+          {
+            id: uid(),
+            plotId: plot.id,
+            text: note.trim(),
+            threshold,
+            at: new Date().toISOString(),
+          },
+        ],
+        plots: s.plots.map((p) => {
+          if (p.id !== plot.id) return p
+          const next = { ...p, threshold }
+          return next.pump.on && pumpBlock(next, s) ? stopPump(next) : next
+        }),
+      }))
+    ) {
+      notify(
+        "Advice and shutoff threshold saved. The farmer can see your note.",
+      )
+      setNote("")
+    }
   }
-  return <div className="space-y-5"><div className="flex flex-wrap items-center gap-2"><button onClick={() => onNav('overview')} className="text-sm text-[var(--primary)] underline">Overview</button><span>/</span><h1 className="font-display text-2xl">Field Diagnostic: {plot.farmer}</h1></div><Card><div className="flex flex-wrap justify-between gap-3"><div><p className="font-semibold">{plot.id} — {plot.field}</p><p className="text-sm text-[var(--muted-foreground)] mt-1">{plot.soil} · {plot.irrigation} · {plot.power}</p></div><Badge plot={plot} /></div><p className="text-sm mt-3">Current moisture: <strong>{plot.moisture}%</strong> · Shutoff limit: {plot.threshold}% · Sample pump: {plot.pump.on ? 'ON' : 'OFF'}</p></Card><div className="grid lg:grid-cols-2 gap-4"><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-4">Soil Moisture — Latest 14 Readings</h2><LineChart values={history} min={0} max={100} threshold={plot.threshold} /></Card><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-4">Illustrative Sucrose Recovery Impact</h2><LineChart values={impact} min={-2} max={0} color="var(--accent)"/><p className="text-xs text-[var(--muted-foreground)]">Demo rule: −0.15 points per moisture point above the limit, capped at −2. This is not an agronomic prediction.</p></Card></div><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-2">Advisory</h2><p className="text-sm mb-4">{advisory(plot, state)}</p><form className="space-y-3" onSubmit={save}><label className="block text-sm">Officer advice<textarea required maxLength={2000} rows={3} className="form-input w-full mt-1" placeholder="Write advice for the farmer" value={note} onChange={e => setNote(e.target.value)} /></label><div className="flex flex-wrap items-end gap-3"><label className="block text-sm">Auto-shutoff threshold (%)<input type="number" min="60" max="90" required value={threshold} onChange={e => setThreshold(Number(e.target.value))} className="form-input block mt-1 w-40" /></label><button type="button" className="text-xs underline text-[var(--primary)] py-3" onClick={() => setThreshold(80)}>Reset to 80%</button><button disabled={!note.trim()} className="primary-button">Log Advice &amp; Save Threshold</button></div></form></Card><Card><h2 className="text-sm font-semibold mb-3">Advice History</h2>{!state.advice.some(a => a.plotId === plot.id) && <p className="text-sm text-[var(--muted-foreground)]">No advice logged for this plot.</p>}{state.advice.filter(a => a.plotId === plot.id).slice().reverse().map(a => <div key={a.id} className="text-sm border-t border-[var(--border)] py-3"><p className="text-xs text-[var(--muted-foreground)] mb-1">{new Date(a.at).toLocaleString('en-IN')} · Priya Sharma · Limit: {a.threshold}%</p><p className="whitespace-pre-wrap">{a.text}</p></div>)}</Card></div>
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => onNav("overview")}
+          className="text-sm text-[var(--primary)] underline"
+        >
+          Overview
+        </button>
+        <span>/</span>
+        <h1 className="font-display text-2xl">
+          Field Diagnostic: {plot.farmer}
+        </h1>
+      </div>
+      <Card>
+        <div className="flex flex-wrap justify-between gap-3">
+          <div>
+            <p className="font-semibold">
+              {plot.id} — {plot.field}
+            </p>
+            <p className="text-sm text-[var(--muted-foreground)] mt-1">
+              {plot.soil} · {plot.irrigation} · {plot.power}
+            </p>
+          </div>
+          <Badge plot={plot} />
+        </div>
+        <p className="text-sm mt-3">
+          Current moisture: <strong>{plot.moisture}%</strong> · Shutoff limit:{" "}
+          {plot.threshold}% · Sample pump: {plot.pump.on ? "ON" : "OFF"}
+        </p>
+      </Card>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card>
+          <h2 className="text-xs font-semibold uppercase tracking-wide mb-4">
+            Soil Moisture — Latest 14 Readings
+          </h2>
+          <LineChart
+            values={history}
+            min={0}
+            max={100}
+            threshold={plot.threshold}
+          />
+        </Card>
+        <Card>
+          <h2 className="text-xs font-semibold uppercase tracking-wide mb-4">
+            Illustrative Sucrose Recovery Impact
+          </h2>
+          <LineChart values={impact} min={-2} max={0} color="var(--accent)" />
+          <p className="text-xs text-[var(--muted-foreground)]">
+            Demo rule: −0.15 points per moisture point above the limit, capped
+            at −2. This is not an agronomic prediction.
+          </p>
+        </Card>
+      </div>
+      <Card>
+        <h2 className="text-xs font-semibold uppercase tracking-wide mb-2">
+          Advisory
+        </h2>
+        <p className="text-sm mb-4">{advisory(plot, state)}</p>
+        <form className="space-y-3" onSubmit={save}>
+          <label className="block text-sm">
+            Officer advice
+            <textarea
+              required
+              maxLength={2000}
+              rows={3}
+              className="form-input w-full mt-1"
+              placeholder="Write advice for the farmer"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </label>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block text-sm">
+              Auto-shutoff threshold (%)
+              <input
+                type="number"
+                min="60"
+                max="90"
+                required
+                value={threshold}
+                onChange={(e) => setThreshold(Number(e.target.value))}
+                className="form-input block mt-1 w-40"
+              />
+            </label>
+            <button
+              type="button"
+              className="text-xs underline text-[var(--primary)] py-3"
+              onClick={() => setThreshold(80)}
+            >
+              Reset to 80%
+            </button>
+            <button disabled={!note.trim()} className="primary-button">
+              Log Advice &amp; Save Threshold
+            </button>
+          </div>
+        </form>
+      </Card>
+      <Card>
+        <h2 className="text-sm font-semibold mb-3">Advice History</h2>
+        {!state.advice.some((a) => a.plotId === plot.id) && (
+          <p className="text-sm text-[var(--muted-foreground)]">
+            No advice logged for this plot.
+          </p>
+        )}
+        {state.advice
+          .filter((a) => a.plotId === plot.id)
+          .slice()
+          .reverse()
+          .map((a) => (
+            <div
+              key={a.id}
+              className="text-sm border-t border-[var(--border)] py-3"
+            >
+              <p className="text-xs text-[var(--muted-foreground)] mb-1">
+                {new Date(a.at).toLocaleString("en-IN")} · Priya Sharma · Limit:{" "}
+                {a.threshold}%
+              </p>
+              <p className="whitespace-pre-wrap">{a.text}</p>
+            </div>
+          ))}
+      </Card>
+    </div>
+  )
 }
 function MillReport() {
-  const { state, notify } = useApp(), periods = months()
+  const { state, notify } = useApp(),
+    periods = months()
   const [period, setPeriod] = useState(periods[0].value)
-  const rows = state.plots.map(p => { const r = periodReadings(p, period); return { plot: p, readings: r, mean: r.length ? average(r.map(x => x.moisture)) : null } })
-  const compliant = rows.filter(r => r.mean !== null && r.mean >= 60 && r.mean <= r.plot.threshold).length, measured = rows.filter(r => r.mean !== null).length
-  function csv() { download(`shetkari-mitra-mill-${period}.csv`, '\uFEFF' + [['Plot ID', 'Farmer', 'Period', 'Average Moisture', 'Sample Grade', 'Readings'], ...rows.map(r => [r.plot.id, r.plot.farmer, period, r.mean?.toFixed(1) ?? 'No data', r.mean === null ? 'No data' : grade(r.mean, r.plot.threshold), r.readings.length])].map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv;charset=utf-8') }
-  return <div className="space-y-5"><div><h1 className="font-display text-2xl">Village A — Monthly Mill Summary Report</h1><p className="text-sm text-[var(--muted-foreground)] mt-1">Sangli District — Sample report</p></div><Card><label className="text-sm">Report period<select className="form-input ml-3" value={period} onChange={e => setPeriod(e.target.value)}>{periods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select></label></Card><div className="bg-white border border-[var(--border)] rounded-[var(--radius)] overflow-x-auto"><table className="w-full text-sm"><thead className="bg-[var(--muted)]"><tr>{['Plot ID', 'Farmer Name', 'Avg Soil Moisture', 'Sample Grade', 'Readings'].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap">{h}</th>)}</tr></thead><tbody>{rows.map(r => <tr key={r.plot.id} className="border-t border-[var(--border)]"><td className="px-4 py-3 text-xs font-mono">{r.plot.id}</td><td className="px-4 py-3">{r.plot.farmer}</td><td className="px-4 py-3">{r.mean === null ? 'No data' : `${r.mean.toFixed(1)}%`}</td><td className="px-4 py-3 font-semibold text-[var(--primary)]">{r.mean === null ? '—' : grade(r.mean, r.plot.threshold)}</td><td className="px-4 py-3">{r.readings.length}</td></tr>)}</tbody></table></div><Card><h2 className="text-xs font-semibold uppercase tracking-wide mb-3">Village Irrigation Compliance</h2><p className="text-sm mb-2">{compliant} of {measured} measured plots in the safe range{measured ? ` (${Math.round(compliant / measured * 100)}%)` : ''}</p><div className="h-3 bg-[var(--muted)] rounded-full overflow-hidden"><div className="h-full bg-[var(--primary)]" style={{ width: `${measured ? compliant / measured * 100 : 0}%` }} /></div></Card><Card><p className="text-sm mb-4">Export the recorded sample data for {periods.find(p => p.value === period)?.label}. This is a demo summary, not an official mill certificate.</p><div className="flex flex-wrap gap-3"><button disabled={!measured} className="primary-button" onClick={() => { try { exportReport(state.plots, period, state); notify('Sample mill PDF downloaded.') } catch { notify('PDF could not be generated. Try again.') } }}>Export Mill Summary PDF</button><button disabled={!measured} className="form-input" onClick={csv}>Export CSV</button></div></Card></div>
+  const rows = state.plots.map((p) => {
+    const r = periodReadings(p, period)
+    return {
+      plot: p,
+      readings: r,
+      mean: r.length ? average(r.map((x) => x.moisture)) : null,
+    }
+  })
+  const compliant = rows.filter(
+      (r) => r.mean !== null && r.mean >= 60 && r.mean <= r.plot.threshold,
+    ).length,
+    measured = rows.filter((r) => r.mean !== null).length
+  function csv() {
+    download(
+      `shetkari-mitra-mill-${period}.csv`,
+      "\uFEFF" +
+        [
+          [
+            "Plot ID",
+            "Farmer",
+            "Period",
+            "Average Moisture",
+            "Sample Grade",
+            "Readings",
+          ],
+          ...rows.map((r) => [
+            r.plot.id,
+            r.plot.farmer,
+            period,
+            r.mean?.toFixed(1) ?? "No data",
+            r.mean === null ? "No data" : grade(r.mean, r.plot.threshold),
+            r.readings.length,
+          ]),
+        ]
+          .map((r) => r.map(csvCell).join(","))
+          .join("\r\n"),
+      "text/csv;charset=utf-8",
+    )
+  }
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl">
+          Village A — Monthly Mill Summary Report
+        </h1>
+        <p className="text-sm text-[var(--muted-foreground)] mt-1">
+          Sangli District — Sample report
+        </p>
+      </div>
+      <Card>
+        <label className="text-sm">
+          Report period
+          <select
+            className="form-input ml-3"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+          >
+            {periods.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Card>
+      <div className="bg-white border border-[var(--border)] rounded-[var(--radius)] overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--muted)]">
+            <tr>
+              {[
+                "Plot ID",
+                "Farmer Name",
+                "Avg Soil Moisture",
+                "Sample Grade",
+                "Readings",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.plot.id} className="border-t border-[var(--border)]">
+                <td className="px-4 py-3 text-xs font-mono">{r.plot.id}</td>
+                <td className="px-4 py-3">{r.plot.farmer}</td>
+                <td className="px-4 py-3">
+                  {r.mean === null ? "No data" : `${r.mean.toFixed(1)}%`}
+                </td>
+                <td className="px-4 py-3 font-semibold text-[var(--primary)]">
+                  {r.mean === null ? "—" : grade(r.mean, r.plot.threshold)}
+                </td>
+                <td className="px-4 py-3">{r.readings.length}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Card>
+        <h2 className="text-xs font-semibold uppercase tracking-wide mb-3">
+          Village Irrigation Compliance
+        </h2>
+        <p className="text-sm mb-2">
+          {compliant} of {measured} measured plots in the safe range
+          {measured ? ` (${Math.round((compliant / measured) * 100)}%)` : ""}
+        </p>
+        <div className="h-3 bg-[var(--muted)] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--primary)]"
+            style={{ width: `${measured ? (compliant / measured) * 100 : 0}%` }}
+          />
+        </div>
+      </Card>
+      <Card>
+        <p className="text-sm mb-4">
+          Export the recorded sample data for{" "}
+          {periods.find((p) => p.value === period)?.label}. This is a demo
+          summary, not an official mill certificate.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            disabled={!measured}
+            className="primary-button"
+            onClick={async () => {
+              try {
+                await exportReport(state.plots, period, state)
+                notify("Sample mill PDF downloaded.")
+              } catch {
+                notify("PDF could not be generated. Try again.")
+              }
+            }}
+          >
+            Export Mill Summary PDF
+          </button>
+          <button disabled={!measured} className="form-input" onClick={csv}>
+            Export CSV
+          </button>
+        </div>
+      </Card>
+    </div>
+  )
 }
-export default function OfficerWorkspace({ onSwitchRole, onFeedback, screen, onScreen, plotId }: { onSwitchRole: () => void; onFeedback: () => void; screen: OfficerScreen; onScreen: Nav; plotId: string }) {
-  const { state } = useApp(), plot = state.plots.find(p => p.id === plotId) ?? state.plots[0]
-  const links: [OfficerScreen, string][] = [['overview', 'Overview'], ['filter', 'Filter Plots'], ['diagnostic', 'Farm Diagnostics'], ['millreport', 'Mill Reports']]
-  return <div className="min-h-screen bg-[var(--background)]"><div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 bg-[var(--muted)] border-b border-[var(--border)] text-xs"><span className="text-[var(--muted-foreground)]">Agricultural Officer: Priya Sharma</span><div className="flex gap-4"><button onClick={onFeedback} className="text-[var(--accent)] underline">Give Feedback</button><button onClick={onSwitchRole} className="text-[var(--primary)] underline">Switch role</button></div></div><div className="flex flex-col md:flex-row"><aside className="md:w-52 shrink-0 bg-white border-b md:border-b-0 md:border-r border-[var(--border)] md:min-h-[calc(100dvh-44px)]"><div className="px-5 pt-5 pb-4"><p className="font-display text-lg text-[var(--primary)]">Shetkari Mitra</p><p className="text-xs text-[var(--muted-foreground)]">Officer Console</p></div><nav aria-label="Officer navigation" className="flex flex-wrap md:flex-col gap-1 px-3 pb-4">{links.map(([id, label]) => <button key={id} aria-current={screen === id ? 'page' : undefined} onClick={() => onScreen(id, id === 'diagnostic' ? plot.id : undefined)} className={`text-left px-3 py-2.5 rounded-lg text-sm font-medium ${screen === id ? 'bg-[var(--secondary)] text-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)]'}`}>{label}</button>)}</nav><div className="hidden md:block px-5 py-4 border-t border-[var(--border)]"><p className="text-xs">Village A, Sangli District</p><a href="/data" className="text-xs underline text-[var(--primary)] block mt-3">Local data</a></div></aside><main className="flex-1 min-w-0 p-4 sm:p-6"><p className="text-xs text-[var(--muted-foreground)] mb-5">Interactive demo · Simulated field data · Activity saved in this browser</p>{screen === 'overview' ? <Overview onNav={onScreen} /> : screen === 'filter' ? <Filters onNav={onScreen} /> : screen === 'diagnostic' ? <><label className="text-sm block mb-5">Selected plot<select className="form-input w-full sm:w-auto sm:ml-3" value={plot.id} onChange={e => onScreen('diagnostic', e.target.value)}>{state.plots.map(p => <option key={p.id} value={p.id}>{p.id} — {p.farmer}</option>)}</select></label><Diagnostic key={plot.id} plot={plot} onNav={onScreen} /></> : <MillReport />}</main></div></div>
+export default function OfficerWorkspace({
+  onSwitchRole,
+  onFeedback,
+  screen,
+  onScreen,
+  plotId,
+}: {
+  onSwitchRole: () => void
+  onFeedback: () => void
+  screen: OfficerScreen
+  onScreen: Nav
+  plotId: string
+}) {
+  const { state } = useApp(),
+    plot = state.plots.find((p) => p.id === plotId) ?? state.plots[0]
+  const links: [OfficerScreen, string][] = [
+    ["overview", "Overview"],
+    ["filter", "Filter Plots"],
+    ["diagnostic", "Farm Diagnostics"],
+    ["millreport", "Mill Reports"],
+  ]
+  return (
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 bg-[var(--muted)] border-b border-[var(--border)] text-xs">
+        <span className="text-[var(--muted-foreground)]">
+          Agricultural Officer: Priya Sharma
+        </span>
+        <div className="flex gap-4">
+          <button
+            onClick={onFeedback}
+            className="text-[var(--accent)] underline"
+          >
+            Give Feedback
+          </button>
+          <button
+            onClick={onSwitchRole}
+            className="text-[var(--primary)] underline"
+          >
+            Switch role
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row">
+        <aside className="md:w-52 shrink-0 bg-white border-b md:border-b-0 md:border-r border-[var(--border)] md:min-h-[calc(100dvh-44px)]">
+          <div className="px-5 pt-5 pb-4">
+            <p className="font-display text-lg text-[var(--primary)]">
+              Shetkari Mitra
+            </p>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Officer Console
+            </p>
+          </div>
+          <nav
+            aria-label="Officer navigation"
+            className="flex flex-wrap md:flex-col gap-1 px-3 pb-4"
+          >
+            {links.map(([id, label]) => (
+              <button
+                key={id}
+                aria-current={screen === id ? "page" : undefined}
+                onClick={() =>
+                  onScreen(id, id === "diagnostic" ? plot.id : undefined)
+                }
+                className={`text-left px-3 py-2.5 rounded-lg text-sm font-medium ${
+                  screen === id
+                    ? "bg-[var(--secondary)] text-[var(--primary)]"
+                    : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <div className="hidden md:block px-5 py-4 border-t border-[var(--border)]">
+            <p className="text-xs">Village A, Sangli District</p>
+            <a
+              href="/data"
+              className="text-xs underline text-[var(--primary)] block mt-3"
+            >
+              Local data
+            </a>
+          </div>
+        </aside>
+        <main className="flex-1 min-w-0 p-4 sm:p-6">
+          <p className="text-xs text-[var(--muted-foreground)] mb-5">
+            Interactive demo · Simulated field data · Activity saved in this
+            browser
+          </p>
+          {screen === "overview" ? (
+            <Overview onNav={onScreen} />
+          ) : screen === "filter" ? (
+            <Filters onNav={onScreen} />
+          ) : screen === "diagnostic" ? (
+            <>
+              <label className="text-sm block mb-5">
+                Selected plot
+                <select
+                  className="form-input w-full sm:w-auto sm:ml-3"
+                  value={plot.id}
+                  onChange={(e) => onScreen("diagnostic", e.target.value)}
+                >
+                  {state.plots.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.id} — {p.farmer}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Diagnostic key={plot.id} plot={plot} onNav={onScreen} />
+            </>
+          ) : (
+            <MillReport />
+          )}
+        </main>
+      </div>
+    </div>
+  )
 }
