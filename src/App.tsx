@@ -1,11 +1,9 @@
-import { useState } from 'react'
-import FarmerApp from './components/FarmerApp'
+import { useEffect, useState } from 'react'
+import FarmerApp, { type FarmerScreen } from './components/FarmerWorkspace'
 import OfficerApp from './components/OfficerApp'
 import FeedbackPage from './components/FeedbackPage'
 import TeacherPage from './components/TeacherPage'
 import { AppProvider } from './lib/store'
-
-type View = 'home' | 'farmer' | 'officer' | 'feedback'
 
 function RoleSelector({ onSelect, onFeedback }: { onSelect: (r: 'farmer' | 'officer') => void; onFeedback: () => void }) {
   return (
@@ -86,6 +84,7 @@ function RoleSelector({ onSelect, onFeedback }: { onSelect: (r: 'farmer' | 'offi
       </div>
 
       <div className="mt-8 max-w-md text-center">
+        <div className="flex justify-center gap-5 mb-4 text-xs text-[var(--primary)] underline"><a href="/teacher">Feedback Responses</a><a href="/data">Local data</a></div>
         <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
           Shetkari Mitra connects soil sensors, grid power data, and weather forecasts to help farmers irrigate efficiently and enable officers to monitor compliance for sugar mill quality standards.
         </p>
@@ -95,14 +94,16 @@ function RoleSelector({ onSelect, onFeedback }: { onSelect: (r: 'farmer' | 'offi
 }
 
 function AppContent() {
-  const [view, setView] = useState<View>('home')
-
-  if (window.location.pathname.replace(/\/+$/, '') === '/teacher') return <TeacherPage />
-
-  if (view === 'farmer') return <FarmerApp onSwitchRole={() => setView('home')} onFeedback={() => setView('feedback')} />
-  if (view === 'officer') return <OfficerApp onSwitchRole={() => setView('home')} onFeedback={() => setView('feedback')} />
-  if (view === 'feedback') return <FeedbackPage onBack={() => setView('home')} />
-  return <RoleSelector onSelect={v => setView(v)} onFeedback={() => setView('feedback')} />
+  const [path, setPath] = useState(window.location.pathname)
+  const go = (url: string) => { window.history.pushState({}, '', url); setPath(url); window.scrollTo(0, 0) }
+  useEffect(() => { const pop = () => setPath(window.location.pathname); window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop) }, [])
+  const parts = path.replace(/\/+$/, '').split('/')
+  const screen = parts[2] as FarmerScreen
+  if (parts[1] === 'teacher') return <TeacherPage />
+  if (parts[1] === 'farmer') return <FarmerApp screen={['home', 'pump', 'voice', 'reports'].includes(screen) ? screen : 'home'} onScreen={s => go(`/farmer/${s}`)} onSwitchRole={() => go('/')} onFeedback={() => go('/feedback')} />
+  if (parts[1] === 'officer') return <OfficerApp onSwitchRole={() => go('/')} onFeedback={() => go('/feedback')} />
+  if (parts[1] === 'feedback') return <FeedbackPage onBack={() => { window.history.back(); setPath(window.location.pathname) }} />
+  return <RoleSelector onSelect={v => go(`/${v}`)} onFeedback={() => go('/feedback')} />
 }
 
 export default function App() { return <AppProvider><AppContent /></AppProvider> }

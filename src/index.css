@@ -88,3 +88,24 @@ html, body {
 }
 input:checked + .toggle-slider { background: var(--primary); }
 input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+body { margin: 0; }
+button, select, summary { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+button, input, select, textarea, a, summary { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.toggle-switch:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 26px; }
+.form-input { border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 14px; background: white; }
+.primary-button { padding: 10px 16px; border-radius: 8px; background: var(--primary); color: white; font-size: 14px; font-weight: 600; }
+.back-button { font-size: 28px; line-height: 1; width: 28px; }
+.farmer-frame { height: min(780px, calc(100dvh - 100px)); min-height: 460px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100; background: var(--foreground); color: white; border-radius: 12px; padding: 14px 18px; width: max-content; max-width: calc(100vw - 32px); display: flex; gap: 20px; align-items: center; font-size: 14px; box-shadow: 0 8px 30px #0002; }
+.toast button { font-size: 24px; }
+.storage-error { padding: 12px 20px; background: #fff1f2; color: #9f1239; font-size: 14px; }
+.storage-error a { text-decoration: underline; }
+@media (max-width: 480px) {
+  .farmer-shell { padding: 12px 0 0; justify-content: start; }
+  .farmer-shell > div:first-child { padding: 0 12px; }
+  .farmer-frame { max-width: none; border-radius: 0; height: calc(100dvh - 90px); min-height: 420px; border-left: 0; border-right: 0; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; } }
